@@ -4928,6 +4928,7 @@ sunday_quick_search(regex_t* reg, const UChar* target, const UChar* target_end,
       p--; t--;
     }
     if (s + map_offset >= text_end) break;
+    if (s >= end - reg->map[*(s + map_offset)]) break;
     s += reg->map[*(s + map_offset)];
   }
 
