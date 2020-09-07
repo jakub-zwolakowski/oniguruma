@@ -4956,7 +4956,7 @@ map_search_backward(OnigEncoding enc, UChar map[],
 {
   const UChar *s = text_start;
 
-  while (s >= text) {
+  while (s != NULL && s >= text) {
     if (map[*s]) return (UChar* )s;
 
     s = onigenc_get_prev_char_head(enc, adjust_text, s);
