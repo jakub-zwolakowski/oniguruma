@@ -4831,7 +4831,7 @@ slow_search_backward(OnigEncoding enc, UChar* target, UChar* target_end,
   else
     s = ONIGENC_LEFT_ADJUST_CHAR_HEAD(enc, adjust_text, s);
 
-  while (s >= text) {
+  while (s != NULL && s >= text) {
     if (*s == *target) {
       p = s + 1;
       t = target + 1;
