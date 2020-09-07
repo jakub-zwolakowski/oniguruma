@@ -5578,7 +5578,7 @@ search_in_range(regex_t* reg, const UChar* str, const UChar* end,
             MATCH_AND_RETURN_CHECK(orig_start);
             s = prev;
           }
-        } while (s >= range);
+        } while (s != NULL && s >= range);
         goto mismatch;
       }
       else { /* check only. */
