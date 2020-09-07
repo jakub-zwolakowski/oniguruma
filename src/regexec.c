@@ -5593,7 +5593,7 @@ search_in_range(regex_t* reg, const UChar* str, const UChar* end,
       prev = onigenc_get_prev_char_head(reg->enc, str, s);
       MATCH_AND_RETURN_CHECK(orig_start);
       s = prev;
-    } while (s >= range);
+    } while (s != NULL && s >= range);
   }
 
  mismatch:
