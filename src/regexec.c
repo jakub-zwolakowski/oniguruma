@@ -4945,7 +4945,7 @@ sunday_quick_search(regex_t* reg, const UChar* target, const UChar* target_end,
   tail = target_end - 1;
 
 #ifdef USE_STRICT_POINTER_ADDRESS
-  if (text < end - (tail - target)) {
+  if ((tail - target) < (end - text) && text < end - (tail - target)) {
     s = text + (tail - target);
     if (s < end) {
       while (TRUE) {
