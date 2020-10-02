@@ -2769,7 +2769,7 @@ compile_tree(Node* node, regex_t* reg, ScanEnv* env)
 }
 
 static int
-make_named_capture_number_map(Node** plink, GroupNumMap* map, int* counter)
+make_named_capture_number_map(Node** plink, GroupNumMap* map, int* counter, int* freed)
 {
   int r = 0;
   Node* node = *plink;
@@ -2778,7 +2778,7 @@ make_named_capture_number_map(Node** plink, GroupNumMap* map, int* counter)
   case NODE_LIST:
   case NODE_ALT:
     do {
-      r = make_named_capture_number_map(&(NODE_CAR(node)), map, counter);
+      r = make_named_capture_number_map(&(NODE_CAR(node)), map, counter, NULL);
     } while (r == 0 && IS_NOT_NULL(node = NODE_CDR(node)));
     break;
 
@@ -2786,9 +2786,10 @@ make_named_capture_number_map(Node** plink, GroupNumMap* map, int* counter)
     {
       Node** ptarget = &(NODE_BODY(node));
       Node*  old = *ptarget;
-      r = make_named_capture_number_map(ptarget, map, counter);
+      int old_freed = 0;
+      r = make_named_capture_number_map(ptarget, map, counter, &old_freed);
       if (r != 0) return r;
-      if (*ptarget != old && NODE_TYPE(*ptarget) == NODE_QUANT) {
+      if (old_freed && NODE_TYPE(*ptarget) == NODE_QUANT) {
         r = onig_reduce_nested_quantifier(node);
       }
     }
@@ -2802,35 +2803,38 @@ make_named_capture_number_map(Node** plink, GroupNumMap* map, int* counter)
           (*counter)++;
           map[en->m.regnum].new_val = *counter;
           en->m.regnum = *counter;
-          r = make_named_capture_number_map(&(NODE_BODY(node)), map, counter);
+          r = make_named_capture_number_map(&(NODE_BODY(node)), map, counter, NULL);
         }
         else {
           *plink = NODE_BODY(node);
           NODE_BODY(node) = NULL_NODE;
           onig_node_free(node);
-          r = make_named_capture_number_map(plink, map, counter);
+          if (freed != NULL) {
+            *freed = 1;
+          }
+          r = make_named_capture_number_map(plink, map, counter, NULL);
         }
       }
       else if (en->type == BAG_IF_ELSE) {
-        r = make_named_capture_number_map(&(NODE_BAG_BODY(en)), map, counter);
+        r = make_named_capture_number_map(&(NODE_BAG_BODY(en)), map, counter, NULL);
         if (r != 0) return r;
         if (IS_NOT_NULL(en->te.Then)) {
-          r = make_named_capture_number_map(&(en->te.Then), map, counter);
+          r = make_named_capture_number_map(&(en->te.Then), map, counter, NULL);
           if (r != 0) return r;
         }
         if (IS_NOT_NULL(en->te.Else)) {
-          r = make_named_capture_number_map(&(en->te.Else), map, counter);
+          r = make_named_capture_number_map(&(en->te.Else), map, counter, NULL);
           if (r != 0) return r;
         }
       }
       else
-        r = make_named_capture_number_map(&(NODE_BODY(node)), map, counter);
+        r = make_named_capture_number_map(&(NODE_BODY(node)), map, counter, NULL);
     }
     break;
 
   case NODE_ANCHOR:
     if (IS_NOT_NULL(NODE_BODY(node)))
-      r = make_named_capture_number_map(&(NODE_BODY(node)), map, counter);
+      r = make_named_capture_number_map(&(NODE_BODY(node)), map, counter, NULL);
     break;
 
   default:
@@ -2988,7 +2992,7 @@ disable_noname_group_capture(Node** root, regex_t* reg, ScanEnv* env)
     map[i].new_val = 0;
   }
   counter = 0;
-  r = make_named_capture_number_map(root, map, &counter);
+  r = make_named_capture_number_map(root, map, &counter, NULL);
   if (r != 0) return r;
 
   r = renumber_backref_traverse(*root, map);
