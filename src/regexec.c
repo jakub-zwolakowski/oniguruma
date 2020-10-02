@@ -4943,23 +4943,26 @@ sunday_quick_search(regex_t* reg, const UChar* target, const UChar* target_end,
 
   map_offset = reg->map_offset;
   tail = target_end - 1;
-  s = text + (tail - target);
 
 #ifdef USE_STRICT_POINTER_ADDRESS
-  if (s < end) {
-    while (TRUE) {
-      p = s;
-      t = tail;
-      while (*p == *t) {
-        if (t == target) return (UChar* )p;
-        p--; t--;
+  if (text < end - (tail - target)) {
+    s = text + (tail - target);
+    if (s < end) {
+      while (TRUE) {
+        p = s;
+        t = tail;
+        while (*p == *t) {
+          if (t == target) return (UChar* )p;
+          p--; t--;
+        }
+        if (text_end - s <= map_offset) break;
+        if (reg->map[*(s + map_offset)] >= end - s) break;
+        s += reg->map[*(s + map_offset)];
       }
-      if (text_end - s <= map_offset) break;
-      if (reg->map[*(s + map_offset)] >= end - s) break;
-      s += reg->map[*(s + map_offset)];
     }
   }
 #else
+  s = text + (tail - target);
   while (s < end) {
     p = s;
     t = tail;
